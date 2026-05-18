@@ -1,11 +1,6 @@
 package com.example.pokemonapp.ui.home
 
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
-import androidx.compose.animation.core.tween
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,6 +16,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
@@ -41,14 +37,12 @@ fun HomeScreen(
 
     Scaffold(
         topBar = {
-            // Cabecera roja de la Pokédex con sus luces características del anime
             TopAppBar(
                 title = {
                     Row(
                         verticalAlignment = Alignment.CenterVertically,
                         horizontalArrangement = Arrangement.Start
                     ) {
-                        // Animación infinita de brillo para el lente principal
                         val infiniteTransition = rememberInfiniteTransition(label = "lente")
                         val alpha by infiniteTransition.animateFloat(
                             initialValue = 0.4f,
@@ -60,7 +54,6 @@ fun HomeScreen(
                             label = "brillo"
                         )
 
-                        // El lente de la Pokédex latiendo con luz azul brillante
                         Box(
                             modifier = Modifier
                                 .size(36.dp)
@@ -70,7 +63,6 @@ fun HomeScreen(
 
                         Spacer(modifier = Modifier.width(12.dp))
 
-                        // Luces parpadeantes pequeñas (Anidadas en fila al costado)
                         Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                             Box(modifier = Modifier.size(10.dp).background(Color(0xFFFF2D55), CircleShape))
                             Box(modifier = Modifier.size(10.dp).background(Color(0xFFFFCC00), CircleShape))
@@ -81,7 +73,7 @@ fun HomeScreen(
                         Text("POKÉDEX KANTO", fontWeight = FontWeight.Black, color = Color.White, fontSize = 18.sp)
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFDC0A2D)) // Rojo Pokédex
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color(0xFFDC0A2D))
             )
         }
     ) { innerPadding ->
@@ -89,11 +81,12 @@ fun HomeScreen(
             modifier = modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .background(Color(0xFF8B0000)) // Fondo rojo oscuro para la estructura física
+                .background(Color(0xFF8B0000))
         ) {
             when (val state = uiState) {
                 is HomeUiState.Loading -> {
-                    CircularProgressIndicator(modifier = Modifier.align(Alignment.Center), color = Color.White)
+                    // JUGADA MAESTRA: En lugar de un cargando simple, tiramos la grilla fantasma
+                    LoadingShimmerGrid()
                 }
                 is HomeUiState.Success -> {
                     LazyVerticalGrid(
@@ -130,8 +123,8 @@ fun HomeScreen(
 @Composable
 fun AnimePokemonCard(pokemon: PokemonNamedResult, onClick: () -> Unit) {
     Card(
-        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 24.dp, bottomStart = 24.dp, bottomEnd = 0.dp), // Corte asimétrico retro
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF232323)), // Pantalla gris oscuro estilo LCD viejo
+        shape = RoundedCornerShape(topStart = 0.dp, topEnd = 24.dp, bottomStart = 24.dp, bottomEnd = 0.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF232323)),
         modifier = Modifier
             .fillMaxWidth()
             .border(3.dp, Color(0xFFDEDEDE), RoundedCornerShape(topStart = 0.dp, topEnd = 24.dp, bottomStart = 24.dp, bottomEnd = 0.dp))
@@ -141,7 +134,6 @@ fun AnimePokemonCard(pokemon: PokemonNamedResult, onClick: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(12.dp)
         ) {
-            // Número estilo pantalla digital verde neón
             Text(
                 text = String.format("Nº %03d", pokemon.id),
                 fontSize = 13.sp,
@@ -150,7 +142,6 @@ fun AnimePokemonCard(pokemon: PokemonNamedResult, onClick: () -> Unit) {
                 modifier = Modifier.align(Alignment.Start)
             )
 
-            // El recuadro blanco de la ilustración interna
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -173,6 +164,40 @@ fun AnimePokemonCard(pokemon: PokemonNamedResult, onClick: () -> Unit) {
                 color = Color.White,
                 fontSize = 15.sp,
                 textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+// COMPONENTE PREMIUM: Muestra tarjetas parpadeantes mientras los datos se descargan
+@Composable
+fun LoadingShimmerGrid() {
+    val infiniteTransition = rememberInfiniteTransition(label = "shimmer")
+    val alpha by infiniteTransition.animateFloat(
+        initialValue = 0.2f,
+        targetValue = 0.6f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "fade"
+    )
+
+    LazyVerticalGrid(
+        columns = GridCells.Fixed(2),
+        contentPadding = PaddingValues(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+        modifier = Modifier.fillMaxSize()
+    ) {
+        items(6) { // Pintamos 6 tarjetas vacías de simulación
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(180.dp)
+                    .clip(RoundedCornerShape(topStart = 0.dp, topEnd = 24.dp, bottomStart = 24.dp, bottomEnd = 0.dp))
+                    .background(Color(0xFF232323).copy(alpha = alpha))
+                    .border(3.dp, Color(0xFFDEDEDE).copy(alpha = alpha), RoundedCornerShape(topStart = 0.dp, topEnd = 24.dp, bottomStart = 24.dp, bottomEnd = 0.dp))
             )
         }
     }
